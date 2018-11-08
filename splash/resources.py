@@ -638,5 +638,5 @@ end
 
     def render_GET(self, request):
         """ Index page """
-        result = "There is nothing to see here..."
+        result = "<html><body>There is nothing to see here...</body></html>"
         return result.encode('utf8')
