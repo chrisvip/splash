@@ -37,5 +37,5 @@ VOLUME [ \
 ]
 
 
-CMD [ "sh", "/app/run.sh" ]
+CMD [ "sh", "/app/heroku-run.sh" ]
 
