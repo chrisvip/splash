@@ -241,7 +241,7 @@ In production it is a good idea to pin Splash version - instead of
 A command for starting a long-running Splash server which uses
 up to 4GB RAM and daemonizes & restarts itself could look like this::
 
-    $ docker run -d -p 8050:8050 --memory=4.5G --restart=always scrapinghub/splash:2.0 --maxrss 4000
+    $ docker run -d -p 8050:8050 --memory=4.5G --restart=always scrapinghub/splash:3.1 --maxrss 4000
 
 You also need a load balancer; for example configs check Aquarium_ or
 an HAProxy config in Splash `repository <https://github.com/scrapinghub/splash/blob/master/examples/splash-haproxy.conf>`__.
@@ -275,12 +275,16 @@ Common reasons:
   https://github.com/annulen/webkit, which is much more recent than WebKit
   provided by Qt; we'll be updating Splash WebKit as annulen's webkit
   develops.
-* Qt or WebKit bugs which cause Splash to hang. Often the whole website works,
-  but some specific .js (or other) file causes problems. In this case you
-  can try starting splash in verbose mode
+* Qt or WebKit bugs which cause Splash to hang or crash. Often the whole
+  website works, but some specific .js (or other) file causes problems.
+  In this case you can try starting splash in verbose mode
   (e.g. ``docker run -it -p8050:8050 scrapinghub/splash -v2``),
   noting what resources are downloaded last, and filtering them out
   using :ref:`splash-on-request` or :ref:`request filters`.
+* Some of the crashes can be solved by disabling HTML 5 media
+  (:ref:`splash-html5-media-enabled` property or
+  :ref:`html5_media <arg-html5-media>` HTTP API argument) - note it is
+  disabled by default.
 * Website may show a different content based on User-Agent header or based
   on IP address. Use :ref:`splash-set-user-agent` to change the default
   User-Agent header. If you're running Splash in a cloud and not getting good
@@ -288,10 +292,19 @@ Common reasons:
   IP address.
 * Website requires Flash. You can enable it using
   :ref:`splash-plugins-enabled`.
+* Website requires IndexedDB_. Enable it using :ref:`splash-indexeddb-enabled`.
+* If there is no video or other media, use :ref:`html5_media <arg-html5-media>`
+  Splash HTTP argument or :ref:`splash-html5-media-enabled` property to enable
+  HTML5 media, or :ref:`splash-plugins-enabled` to enable Flash.
+* Website has compatibility issues with Webkit version Splash is using.
+  A quick (though not precise) way to check it is to try opening a page
+  in Safari.
 
 If you have troubles making Splash work, consider asking a question
 at https://stackoverflow.com. If you think it is a Splash bug,
 raise an issue at https://github.com/scrapinghub/splash/issues.
+
+.. _IndexedDB: https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API
 
 .. _disable-private-mode:
 
@@ -327,6 +340,21 @@ Why was Splash created in the first place?
 
 Please refer to `this great answer from kmike on reddit.
 <https://www.reddit.com/r/Python/comments/2xp5mr/handling_javascript_in_scrapy_with_splash/cp2vgd6>`__
+
+.. _why-css-images:
+
+Why are CSS styling and images missing from the .har archive?
+-------------------------------------------------------------
+
+Webkit has an in-memory cache (also `called page-cache <https://webkit.org/blog/427/webkit-page-cache-i-the-basics/>`)
+and a `network cache <http://doc.qt.io/qt-5/qnetworkrequest.html#CacheLoadControl-enum>`. 
+
+If you tell splash to load two pages that share some common resources,
+the second page's .har file will not contain the shared resources because
+they were cached through the page cache.
+
+If you want the .har file to contain all the resources for that page,
+run splash with the command-line option ``--disable-browser-caches``.
 
 .. _why-lua:
 

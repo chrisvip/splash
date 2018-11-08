@@ -5,6 +5,7 @@ import sip
 from PyQt5.QtWebKitWidgets import QWebPage, QWebView
 from PyQt5.QtCore import QByteArray
 from twisted.python import log
+import traceback
 
 from splash.har_builder import HarBuilder
 
@@ -45,6 +46,7 @@ class SplashQWebPage(QWebPage):
     skip_custom_headers = False
     navigation_locked = False
     resource_timeout = 0
+    request_body_enabled = False
     response_body_enabled = False
 
     def __init__(self, verbosity=0):
@@ -54,6 +56,7 @@ class SplashQWebPage(QWebPage):
             "on_request": [],
             "on_response_headers": [],
             "on_response": [],
+            "on_navigation_locked": [],
         }
         self.mainFrame().urlChanged.connect(self.on_url_changed)
         self.mainFrame().titleChanged.connect(self.on_title_changed)
@@ -63,6 +66,17 @@ class SplashQWebPage(QWebPage):
 
     def reset_har(self):
         self.har.reset()
+
+    def run_callbacks(self, event_name, *args):
+        for cb in self.callbacks.get(event_name, []):
+            try:
+                cb(*args)
+            except:
+                # TODO unhandled exceptions in lua callbacks
+                # should we raise errors here?
+                # https://github.com/scrapinghub/splash/issues/161
+                log.msg("error in %s callback" % event_name)
+                log.msg(traceback.format_exc())
 
     def clear_callbacks(self, event=None):
         """
@@ -90,6 +104,7 @@ class SplashQWebPage(QWebPage):
 
     def acceptNavigationRequest(self, webFrame, networkRequest, navigationType):
         if self.navigation_locked:
+            self.run_callbacks('on_navigation_locked', networkRequest)
             return False
         self.error_info = None
         return super(SplashQWebPage, self).acceptNavigationRequest(webFrame, networkRequest, navigationType)

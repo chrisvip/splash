@@ -149,6 +149,24 @@ Enable or disable browser plugins (e.g. Flash).
 Plugins are disabled by default.
 
 
+.. _splash-request-body-enabled:
+
+splash.request_body_enabled
+----------------------------
+
+Enable or disable storage of request content.
+
+**Signature:** ``splash.request_body_enabled = true/false``
+
+By default Splash doesn't keep bodies of each request in memory. It means that
+request content is not available in :ref:`splash-request-info` and in HAR_
+exports. To make request content available to a Lua script set
+``splash.request_body_enabled = true``.
+
+Note that request body in :ref:`splash-request-info` is not available in the
+callback :ref:`splash-on-response-headers` or in the request of the response
+returned by :ref:`splash-http-get` and :ref:`splash-http-post`.
+
 .. _splash-response-body-enabled:
 
 splash.response_body_enabled
@@ -199,6 +217,73 @@ It is also possible to omit coordinates which you don't want to change.
 For example, ``splash.scroll_position = {y=200}`` sets y to 200 and keeps
 previous x value.
 
+.. _splash-indexeddb-enabled:
+
+splash.indexeddb_enabled
+------------------------
+
+Enable or disable IndexedDB_.
+
+**Signature:** ``splash.indexeddb_enabled = true/false``
+
+IndexedDB is disabled by default. Use ``splash.indexeddb_enabled = true``
+to enable it.
+
+.. note::
+   Currently IndexedDB is disabled by default because there are issues
+   with Splash WebKit's implementation. Default value for this option may
+   change to ``true`` in future.
+
+.. _IndexedDB: https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API
+
+.. _splash-webgl-enabled:
+
+splash.webgl_enabled
+--------------------
+
+Enable or disable WebGL_.
+
+**Signature:** ``splash.webgl_enabled = true/false``
+
+WebGL is enabled by default. Use ``splash.webgl_enabled = false``
+to disable it.
+
+.. _WebGL: https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API
+
+.. _splash-html5-media-enabled:
+
+splash.html5_media_enabled
+--------------------------
+
+Enable or disable HTML5 media, including HTML5 video and audio
+(e.g. ``<video>`` elements playback).
+
+**Signature:** ``splash.html5_media_enabled = true/false``
+
+HTML5 media is disabled by default. Use ``splash.html5_media_enabled = true``
+to enable it.
+
+.. note::
+   Currently HTML5 media is disabled by default, because it makes WebKit
+   crash on some websites in some environments. Default value for this
+   option may change to ``true`` in future. Set it to ``false`` explicitly
+   in a script if you don't want HTML5 media.
+
+See also: :ref:`html5_media <arg-html5-media>` HTTP API argument.
+
+.. _splash-media-source-enabled:
+
+splash.media_source_enabled
+---------------------------
+
+Enable or disable `Media Source Extensions API`_.
+
+**Signature:** ``splash.media_source_enabled = true/false``
+
+Media Source is enabled by default. Use ``splash.media_source_enabled = false``
+to disable it.
+
+.. _Media Source Extensions API: https://developer.mozilla.org/en-US/docs/Web/API/Media_Source_Extensions_API
 
 Methods
 ~~~~~~~
@@ -1386,12 +1471,14 @@ all existing logs and start recording from scratch:
          return {har1=har1, har2=har2}
      end
 
-By default, response content is not returned in HAR data. To enable it, use
-:ref:`splash-response-body-enabled` option or
+By default, request and response contents are not included in HAR data. To
+enable request contents, use :ref:`splash-request-body-enabled` option. To
+enable response contents, use :ref:`splash-response-body-enabled` option or
 :ref:`splash-request-enable-response-body` method.
 
 See also: :ref:`splash-har-reset`, :ref:`splash-on-response`,
-:ref:`splash-response-body-enabled`, :ref:`splash-request-enable-response-body`.
+:ref:`splash-request-body-enabled`, :ref:`splash-response-body-enabled`,
+:ref:`splash-request-enable-response-body`.
 
 .. _HAR: http://www.softwareishard.com/blog/har-12-spec/
 
@@ -2716,3 +2803,49 @@ Example: select all ``<img />`` elements and get their ``src`` attributes
 
         return treat.as_array(srcs)
     end
+
+
+.. _splash-on-navigation-locked:
+
+splash:on_navigation_locked
+---------------------------
+
+Register a function to be called before a request is discarded when navigation is locked.
+
+**Signature:** ``splash:on_navigation_locked(callback)``
+
+**Parameters:**
+
+* callback - Lua function to call before a request is discarded.
+
+**Returns:** nil.
+
+**Async:** no.
+
+:ref:`splash-on-navigation-locked` callback receives a single ``request`` argument
+(a :ref:`splash-request`).
+
+To get information about a request use request
+:ref:`attributes <splash-request-attributes>`;
+
+A callback passed to :ref:`splash-on-navigation-locked` can't call Splash
+async methods like :ref:`splash-wait` or :ref:`splash-go`.
+
+Example 1 - log all URLs discarded using :ref:`splash-request-url` attribute:
+
+.. literalinclude:: ../splash/examples/log-locked-requests.lua
+   :language: lua
+
+
+.. _splash-on-navigation-locked-reset:
+
+splash:on_navigation_locked_reset
+---------------------------------
+
+Remove all callbacks registered by :ref:`splash-on-navigation-locked`.
+
+**Signature:** ``splash:on_navigation_locked_reset()``
+
+**Returns:** nil
+
+**Async:** no.

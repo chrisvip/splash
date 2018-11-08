@@ -1,6 +1,40 @@
 Changes
 =======
 
+3.2 (2018-02-15)
+----------------
+
+HTML5 media (e.g. ``<video>`` tags playback) is disabled by default in this
+release, because it was a source of some of Splash crashes. This is
+**backwards incompatible**, as it can affect rendering. If you need old
+behavior (it was working on sites you're crawling), use either
+:ref:`html5_media=1 <arg-html5-media>` HTTP API argument
+or :ref:`splash-html5-media-enabled` attribute to re-enable HTML5 media.
+
+Other changes:
+
+* :ref:`html5_media <arg-html5-media>` HTTP API argument and
+  :ref:`splash-html5-media-enabled` attribute allow to enable/disable HTML5
+  media;
+* :ref:`splash-webgl-enabled` attribute allows to enable/disable WebGL;
+* :ref:`splash-media-source-enabled` attribute allows to enable/disable
+  Media Source Extension API;
+* ``--xvbf_screen_size`` Splash startup argument allows to customize
+  xvfb screen size (it could be helpful sometimes to have it matching with
+  a viewport size you're using in a crawl);
+* documentation and test improvements.
+
+3.1 (2018-01-31)
+----------------
+
+* IndexedDB can be enabled by setting :ref:`splash-indexeddb-enabled`
+  attribute to ``true`` in a Lua script;
+* Bengali and Assamese fonts are added to the default Docker image;
+* :ref:`splash-runjs` and :ref:`splash-autoload` are fixed for scripts
+  which end with a line comment (``//``);
+* ``--ip`` startup argument allows to set an IP address Splash listens on;
+* Documentation and testing improvements.
+
 3.0 (2017-07-06)
 ----------------
 

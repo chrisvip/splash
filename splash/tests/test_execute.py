@@ -4,6 +4,7 @@ import unittest
 from io import BytesIO
 import numbers
 import time
+import random
 
 from PIL import Image
 import requests
@@ -1046,6 +1047,16 @@ class RunjsTest(BaseLuaRenderTest):
         self.assertStatusCode(resp, 200)
         err = resp.json()['err']
         self.assertEqual(err, 'JS error: "ReferenceError: Can\'t find variable: y"')
+
+    def test_runjs_nowrap(self):
+        resp = self.request_lua("""
+        function main(splash)
+            local res, err = splash:runjs("true;//")
+            return {res=res, err=err}
+        end
+        """)
+        self.assertStatusCode(resp, 200)
+        self.assertEqual(resp.json(), {"res": True})
 
     def test_runjs_assert(self):
         resp = self.request_lua("""
@@ -2570,6 +2581,16 @@ class AutoloadTest(BaseLuaRenderTest):
         self.assertNotIn("ok", resp.json())
         self.assertIn("404", resp.json()["reason"])
 
+    def test_autoload_bad_script(self):
+        resp = self.request_lua("""
+        function main(splash)
+            local ok, reason = splash:autoload("throw 123;")
+            assert(splash:go(splash.args.url))
+            return {ok=ok, reason=reason}
+        end
+        """, {"url": self.mockurl("getrequest")})
+        self.assertStatusCode(resp, 200)
+
     def test_noargs(self):
         resp = self.request_lua("""
         function main(splash)
@@ -3554,6 +3575,101 @@ class IsolationTest(BaseLuaRenderTest):
         self.assertEqual(resp.text, "value")
 
 
+class IndexedDBTest(BaseLuaRenderTest):
+    def _get_detect_indexeddb_js(self, db_name=None):
+        if db_name is None:
+            db_name = "DB-{}".format(random.random())
+
+        return """
+        function main(splash) {
+            console.log("start");
+            if (!window.indexedDB) {
+                console.log("no indexed db");
+                splash.resume("no indexed DB");
+                return;
+            }
+            var dbName = "%s";
+            var request = window.indexedDB.open(dbName, 3);
+            console.log("request created");
+            request.onerror = function(event) {
+                console.log("onerror");
+                splash.resume("can't open IndexedDB database");
+            };
+            request.onsuccess = function(event) {
+                console.log("onsuccess");
+                var db = event.target.result;        
+                // db.close();
+                splash.resume("onsuccess");
+            };
+            request.onupgradeneeded = function(event) { 
+                console.log("onupgradeneeded");
+                var db = event.target.result;        
+    //            var objectStore = db.createObjectStore("name", { keyPath: "myKey" });
+                // db.close();
+                splash.resume("db created");
+            };
+            request.onversionchange = function(err) {
+                console.log("onversionchange", err);
+                splash.resume("versionchange");
+            };         
+            request.onblocked = function(event) {
+                console.log("onblocked");
+                splash.resume("blocked");            
+            }; 
+            console.log("end");
+        }
+        """ % db_name
+
+    def test_indexeddb_available(self, db_name='TestDB'):
+        resp = self.request_lua("""
+        function main(splash)
+            splash.indexeddb_enabled = true
+            assert(splash:go(splash.args.url))
+            return assert(splash:wait_for_resume(splash.args.js))
+        end
+        """, {'url': self.mockurl('jsrender'),
+              'js': self._get_detect_indexeddb_js(db_name),
+              'timeout': 3})
+        self.assertStatusCode(resp, 200)
+        self.assertEqual(resp.json(), {'value': 'db created'})
+
+    @pytest.mark.xfail
+    def test_indexeddb_available2(self):
+        # For some reason IndexedDB hangs when a DB with the same name
+        # is used. Is it an issue with JS script?
+        self.test_indexeddb_available()
+
+    def test_indexeddb_available3(self):
+        self.test_indexeddb_available(None)
+
+    def test_indexeddb_enable_disable(self):
+        resp = self.request_lua("""
+        treat = require('treat')
+        function main(splash)
+            splash.indexeddb_enabled = false
+            assert(splash:go(splash.args.url))
+            local res1 = assert(splash:wait_for_resume(splash.args.js))
+            local val1 = splash.indexeddb_enabled
+
+            splash.indexeddb_enabled = true
+            assert(splash:go(splash.args.url))
+            assert(splash:wait(1.0))
+            local res2 = assert(splash:wait_for_resume(splash.args.js))
+            local val2 = splash.indexeddb_enabled
+            return treat.as_array({res1, val1, res2, val2})
+        end
+        """, {'url': self.mockurl('jsrender'),
+              'js': self._get_detect_indexeddb_js(),
+              'timeout': 5})
+        self.assertStatusCode(resp, 200)
+        res1, val1, res2, val2 = resp.json()
+        assert res1 == {'value': 'no indexed DB'}
+        assert val1 is False
+
+        assert res2 == {'value': 'db created'}
+        assert val2 is True
+
+
 class EnableDisablePrivateModeTest(BaseLuaRenderTest):
     LOCAL_STORAGE_WORKS_JS = """
     (function () {
@@ -3661,24 +3777,119 @@ class PluginsEnabledTest(BaseLuaRenderTest):
 
 
 class WebGLTest(BaseLuaRenderTest):
+    # WebGL detection code is from
+    # https://developer.mozilla.org/en-US/docs/Learn/WebGL/By_example/Detect_WebGL
+    DETECT_WEBGL_JS = """
+    function () {
+        var canvas = document.createElement("canvas");
+        var gl = canvas.getContext("webgl")
+                    || canvas.getContext("experimental-webgl");
+        return ~~(gl && gl instanceof WebGLRenderingContext);
+    }    
+    """
+
     def test_webgl(self):
-        # WebGL detection code is from
-        # https://developer.mozilla.org/en-US/docs/Learn/WebGL/By_example/Detect_WebGL
         resp = self.request_lua("""
-        function main(splash)
-            webgl_supported = splash:jsfunc([[
-                function () {
-                    var canvas = document.createElement("canvas");
-                    var gl = canvas.getContext("webgl")
-                                || canvas.getContext("experimental-webgl");
-                    return (gl && gl instanceof WebGLRenderingContext);
-                }
-            ]])
-            return webgl_supported()
+        function main(splash, args)
+            local webgl_supported = splash:jsfunc(args.js)
+            return {
+                supported = webgl_supported(),
+                enabled = splash.webgl_enabled
+            }
         end
-        """)
+        """, {'js': self.DETECT_WEBGL_JS})
         self.assertStatusCode(resp, 200)
-        self.assertEqual(resp.text, "True")
+        self.assertEqual(resp.json(), {
+            'supported': defaults.WEBGL_ENABLED,
+            'enabled': defaults.WEBGL_ENABLED,
+        })
+
+    def test_webgl_enable_disable(self):
+        for enabled in [False, True]:
+            resp = self.request_lua("""
+            function main(splash, args)
+                splash.webgl_enabled = args.enabled
+                local webgl_supported = splash:jsfunc(args.js)
+                return webgl_supported()
+            end
+            """, {'js': self.DETECT_WEBGL_JS, 'enabled': enabled})
+            self.assertStatusCode(resp, 200)
+            self.assertEqual(resp.json(), enabled)
+
+
+class Html5MediaTest(BaseLuaRenderTest):
+    # from https://stackoverflow.com/questions/3570502/how-to-check-for-html5-video-support
+    HTML5_VIDEO_SUPPORTED_JS = """
+    function() {return !!document.createElement('video').canPlayType}
+    """
+
+    def test_defaults(self):
+        resp = self.request_lua("""
+        function main(splash, args)
+            local html5_video_supported = splash:jsfunc(args.js)
+            return {
+                supported = html5_video_supported(),
+                enabled = splash.html5_media_enabled
+            }
+        end
+        """, {'js': self.HTML5_VIDEO_SUPPORTED_JS})
+        self.assertStatusCode(resp, 200)
+        self.assertEqual(resp.json(), {
+            'supported': defaults.HTML5_MEDIA_ENABLED,
+            'enabled': defaults.HTML5_MEDIA_ENABLED,
+        })
+
+    def test_enable_disable(self):
+        for enabled in [False, True]:
+            resp = self.request_lua("""
+            function main(splash, args)
+                splash.html5_media_enabled = args.enabled
+                local html5_video_supported = splash:jsfunc(args.js)
+                return {enabled=html5_video_supported()}
+            end
+            """, {'js': self.HTML5_VIDEO_SUPPORTED_JS, 'enabled': enabled})
+            self.assertStatusCode(resp, 200)
+            self.assertEqual(resp.json(), {'enabled': enabled})
+
+
+class MediaSourceTest(BaseLuaRenderTest):
+    # detection code is adapted from
+    # https://github.com/nickdesaulniers/netfix/blob/gh-pages/demo/bufferAll.html
+    DETECT_MSE_JS = """
+    function() { 
+        var mimeCodec = 'video/mp4; codecs="avc1.42E01E, mp4a.40.2"'; 
+        return !!('MediaSource' in window && 
+                   window.MediaSource && 
+                   MediaSource.isTypeSupported(mimeCodec));
+    }    
+    """
+    def test_defaults(self):
+        resp = self.request_lua("""
+        function main(splash, args)
+            local mse_supported = splash:jsfunc(args.js)
+            return {
+                supported = mse_supported(),
+                enabled = splash.media_source_enabled
+            }
+        end
+        """, {'js': self.DETECT_MSE_JS})
+        self.assertStatusCode(resp, 200)
+        self.assertEqual(resp.json(), {
+            'supported': defaults.MEDIA_SOURCE_ENABLED,
+            'enabled': defaults.MEDIA_SOURCE_ENABLED,
+        })
+
+    def test_enable_disable(self):
+        for enabled in [False, True]:
+            resp = self.request_lua("""
+            function main(splash, args)
+                splash.media_source_enabled = args.enabled
+                local mse_supported = splash:jsfunc(args.js)
+                return {enabled=mse_supported()}
+            end
+            """, {'js': self.DETECT_MSE_JS, 'enabled': enabled})
+            self.assertStatusCode(resp, 200)
+            self.assertEqual(resp.json(), {'enabled': enabled})
 
 
 class MouseEventsTest(BaseLuaRenderTest):

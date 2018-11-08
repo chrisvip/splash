@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import json
 import os
 import optparse
 import base64
@@ -467,13 +468,42 @@ JsPostResource = _html_resource("""
 <html>
 <body>
 <form action="/postrequest" method="POST">
-    <input type="hidden" value="i-am-hidden"/>
+    <input type="hidden" name="hidden-field" value="i-am-hidden"/>
+    <input type="text" name="a-field" value="field value"/>
     <input type="submit" value="go"/>
 </form>
 <script>document.querySelector('form').submit();</script>
 </body>
 </html>
 """)
+
+
+class XHRPostPage(Resource):
+    isLeaf = True
+
+    def render_GET(self, request):
+        content_type = getarg(request, "content_type",
+                              "application/octet-stream")
+        body = getarg(request, "body", "Hello world!")
+
+        # Used to test large requests.
+        body_repeat = int(getarg(request, "body_repeat", 1))
+        body *= body_repeat
+
+        res = """
+            <html>
+                <body>
+                <script>
+                    var xhr = new XMLHttpRequest(); 
+                    xhr.open("POST", "/postrequest");
+                    xhr.setRequestHeader("Content-Type", %s);
+                    xhr.send(%s);
+                    </script>
+                </body>
+            </html>
+        """ % (json.dumps(content_type), json.dumps(body))
+
+        return res.encode('utf-8')
 
 
 ExternalIFrameResource = _html_resource("""
@@ -901,6 +931,38 @@ class Subresources(Resource):
             return base64.decodebytes(b'R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=')
 
 
+class SubresourcesWithCaching(Resource):
+    """
+        Embedded css.
+        Allows caching of the image by setting the Cache-Control header.
+
+        Very similar to the /subresources/ endpoint.
+    """
+
+    def getChild(self, name, request):
+        if name == b"img.gif":
+            return self.Image()
+        return self
+
+    class Image(Resource):
+
+        @use_chunked_encoding
+        def render_GET(self, request):
+            request.setHeader(b"Content-Type", b"image/gif")
+            request.setHeader(b"Cache-Control", b"public, max-age=999999, s-maxage=999999")
+            return base64.decodebytes(b'R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=')
+
+    @use_chunked_encoding
+    def render_GET(self, request):
+        return ("""<html>
+            <body>
+            <img id="image" src="subresources-with-caching/img.gif"
+                 onload="window.imageLoaded = true;"
+                 onerror="window.imageLoaded = false;"/>
+            </body>
+        </html>""").encode('utf-8')
+
+
 class SetHeadersResource(Resource):
 
     @use_chunked_encoding
@@ -1006,6 +1068,7 @@ class Root(Resource):
         self.putChild(b"very-long-green-page", VeryLongGreenPage())
         self.putChild(b"rgb-stripes", RgbStripesPage())
         self.putChild(b"subresources", Subresources())
+        self.putChild(b"subresources-with-caching", SubresourcesWithCaching())
         self.putChild(b"set-header", SetHeadersResource())
         self.putChild(b"echourl", EchoUrl())
         self.putChild(b"bad-content-type", InvalidContentTypeResource())
@@ -1037,6 +1100,8 @@ class Root(Resource):
         self.putChild(b"meta-redirect1", MetaRedirect1())
         self.putChild(b"meta-redirect-target", MetaRedirectTarget())
         self.putChild(b"http-redirect", HttpRedirectResource())
+
+        self.putChild(b"do-post", XHRPostPage())
 
         self.putChild(b"", Index(self.children))
 

@@ -65,6 +65,17 @@
     "details": "Plugins are disabled by default.",
     "params": null
   },
+  "splash.request_body_enabled": {
+    "name": null,
+    "header": "splash.request_body_enabled",
+    "content": "Enable or disable storage of request content.\n\n**Signature:** ``splash.request_body_enabled = true/false``\n\nBy default Splash doesn't keep bodies of each request in memory. It means that\nrequest content is not available in :ref:`splash-request-info` and in HAR_\nexports. To make request content available to a Lua script set\n``splash.request_body_enabled = true``.\n\nNote that request data in :ref:`splash-request-info` is not available in the\ncallback :ref:`splash-on-response-headers` or in the request of the response\nreturned by :ref:`splash-http-get` and :ref:`splash-http-post`.",
+    "short": "Enable or disable storage of request content.",
+    "signature": "splash.request_body_enabled = true/false",
+    "returns": null,
+    "async": null,
+    "details": "By default Splash doesn't keep bodies of each request in memory. It means that\nrequest content is not available in :ref:`splash-request-info` and in HAR_\nexports. To make request content available to a Lua script set\n``splash.request_body_enabled = true``.\n\nNote that request data in :ref:`splash-request-info` is not available in the\ncallback :ref:`splash-on-response-headers` or in the request of the response\nreturned by :ref:`splash-http-get` and :ref:`splash-http-post`.",
+    "params": null
+  },
   "splash.response_body_enabled": {
     "name": null,
     "header": "splash.response_body_enabled",
@@ -79,12 +90,56 @@
   "splash.scroll_position": {
     "name": null,
     "header": "splash.scroll_position",
-    "content": "Get or set current scroll position.\n\n**Signature:** ``splash.scroll_position = {x=..., y=...}``\n\nThis property allows to get and set current scroll position of the\nmain window.\n\nScrolling outside window content has no effect. For example, if you set\n``splash.scroll_position`` to ``{x=-100, y=-100}``, then\n``splash.scroll_position`` will likely still be equal to the default\n``{x=0, y=0}``.\n\nTo set scroll position instead of the full form\n(e.g. ``splash.scroll_position = {x=100, y=200}``) you can also use the\nshort form ``splash.scroll_position = {100, 200}``. Attribute\nvalue is always a table with ``x`` and ``y`` keys, even if you set it using\nthe short form.\n\nIt is also possible to omit coordinates which you don't want to change.\nFor example, ``splash.scroll_position = {y=200}`` sets y to 200 and keeps\nprevious x value.\n\n\nMethods\n~~~~~~~",
+    "content": "Get or set current scroll position.\n\n**Signature:** ``splash.scroll_position = {x=..., y=...}``\n\nThis property allows to get and set current scroll position of the\nmain window.\n\nScrolling outside window content has no effect. For example, if you set\n``splash.scroll_position`` to ``{x=-100, y=-100}``, then\n``splash.scroll_position`` will likely still be equal to the default\n``{x=0, y=0}``.\n\nTo set scroll position instead of the full form\n(e.g. ``splash.scroll_position = {x=100, y=200}``) you can also use the\nshort form ``splash.scroll_position = {100, 200}``. Attribute\nvalue is always a table with ``x`` and ``y`` keys, even if you set it using\nthe short form.\n\nIt is also possible to omit coordinates which you don't want to change.\nFor example, ``splash.scroll_position = {y=200}`` sets y to 200 and keeps\nprevious x value.",
     "short": "Get or set current scroll position.",
     "signature": "splash.scroll_position = {x=..., y=...}",
     "returns": null,
     "async": null,
-    "details": "This property allows to get and set current scroll position of the\nmain window.\n\nScrolling outside window content has no effect. For example, if you set\n``splash.scroll_position`` to ``{x=-100, y=-100}``, then\n``splash.scroll_position`` will likely still be equal to the default\n``{x=0, y=0}``.\n\nTo set scroll position instead of the full form\n(e.g. ``splash.scroll_position = {x=100, y=200}``) you can also use the\nshort form ``splash.scroll_position = {100, 200}``. Attribute\nvalue is always a table with ``x`` and ``y`` keys, even if you set it using\nthe short form.\n\nIt is also possible to omit coordinates which you don't want to change.\nFor example, ``splash.scroll_position = {y=200}`` sets y to 200 and keeps\nprevious x value.\n\n\nMethods\n~~~~~~~",
+    "details": "This property allows to get and set current scroll position of the\nmain window.\n\nScrolling outside window content has no effect. For example, if you set\n``splash.scroll_position`` to ``{x=-100, y=-100}``, then\n``splash.scroll_position`` will likely still be equal to the default\n``{x=0, y=0}``.\n\nTo set scroll position instead of the full form\n(e.g. ``splash.scroll_position = {x=100, y=200}``) you can also use the\nshort form ``splash.scroll_position = {100, 200}``. Attribute\nvalue is always a table with ``x`` and ``y`` keys, even if you set it using\nthe short form.\n\nIt is also possible to omit coordinates which you don't want to change.\nFor example, ``splash.scroll_position = {y=200}`` sets y to 200 and keeps\nprevious x value.",
+    "params": null
+  },
+  "splash.indexeddb_enabled": {
+    "name": null,
+    "header": "splash.indexeddb_enabled",
+    "content": "Enable or disable IndexedDB_.\n\n**Signature:** ``splash.indexeddb_enabled = true/false``\n\nIndexedDB is disabled by default. Use ``splash.indexeddb_enabled = true``\nto enable it.\n\n.. note::\n   Currently IndexedDB is disabled by default because there are issues\n   with Splash WebKit's implementation. Default value for this option may\n   change to ``true`` in future.\n\n.. _IndexedDB: https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API",
+    "short": "Enable or disable IndexedDB_.",
+    "signature": "splash.indexeddb_enabled = true/false",
+    "returns": null,
+    "async": null,
+    "details": "IndexedDB is disabled by default. Use ``splash.indexeddb_enabled = true``\nto enable it.\n\n.. note::\n   Currently IndexedDB is disabled by default because there are issues\n   with Splash WebKit's implementation. Default value for this option may\n   change to ``true`` in future.\n\n.. _IndexedDB: https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API",
+    "params": null
+  },
+  "splash.webgl_enabled": {
+    "name": null,
+    "header": "splash.webgl_enabled",
+    "content": "Enable or disable WebGL_.\n\n**Signature:** ``splash.webgl_enabled = true/false``\n\nWebGL is enabled by default. Use ``splash.webgl_enabled = false``\nto disable it.\n\n.. _WebGL: https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API",
+    "short": "Enable or disable WebGL_.",
+    "signature": "splash.webgl_enabled = true/false",
+    "returns": null,
+    "async": null,
+    "details": "WebGL is enabled by default. Use ``splash.webgl_enabled = false``\nto disable it.\n\n.. _WebGL: https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API",
+    "params": null
+  },
+  "splash.html5_media_enabled": {
+    "name": null,
+    "header": "splash.html5_media_enabled",
+    "content": "Enable or disable HTML5 media, including HTML5 video and audio\n(e.g. ``<video>`` elements playback).\n\n**Signature:** ``splash.html5_media_enabled = true/false``\n\nHTML5 media is disabled by default. Use ``splash.html5_media_enabled = true``\nto enable it.\n\n.. note::\n   Currently HTML5 media is disabled by default, because it makes WebKit\n   crash on some websites in some environments. Default value for this\n   option may change to ``true`` in future. Set it to ``false`` explicitly\n   in a script if you don't want HTML5 media.\n\nSee also: :ref:`html5_media <arg-html5-media>` HTTP API argument.",
+    "short": "Enable or disable HTML5 media, including HTML5 video and audio\n(e.g. ``<video>`` elements playback).",
+    "signature": "splash.html5_media_enabled = true/false",
+    "returns": null,
+    "async": null,
+    "details": "HTML5 media is disabled by default. Use ``splash.html5_media_enabled = true``\nto enable it.\n\n.. note::\n   Currently HTML5 media is disabled by default, because it makes WebKit\n   crash on some websites in some environments. Default value for this\n   option may change to ``true`` in future. Set it to ``false`` explicitly\n   in a script if you don't want HTML5 media.\n\nSee also: :ref:`html5_media <arg-html5-media>` HTTP API argument.",
+    "params": null
+  },
+  "splash.media_source_enabled": {
+    "name": null,
+    "header": "splash.media_source_enabled",
+    "content": "Enable or disable `Media Source Extensions API`_.\n\n**Signature:** ``splash.media_source_enabled = true/false``\n\nMedia Source is enabled by default. Use ``splash.media_source_enabled = false``\nto disable it.\n\n.. _Media Source Extensions API: https://developer.mozilla.org/en-US/docs/Web/API/Media_Source_Extensions_API\n\nMethods\n~~~~~~~",
+    "short": "Enable or disable `Media Source Extensions API`_.",
+    "signature": "splash.media_source_enabled = true/false",
+    "returns": null,
+    "async": null,
+    "details": "Media Source is enabled by default. Use ``splash.media_source_enabled = false``\nto disable it.\n\n.. _Media Source Extensions API: https://developer.mozilla.org/en-US/docs/Web/API/Media_Source_Extensions_API\n\nMethods\n~~~~~~~",
     "params": null
   },
   "splash:go": {
@@ -255,12 +310,12 @@
   "splash:har": {
     "name": "har",
     "header": "splash:har",
-    "content": "**Signature:** ``har = splash:har{reset=false}``\n\n**Parameters:**\n\n* reset - optional; when ``true``, reset HAR records after taking a snapshot.\n\n**Returns:** information about pages loaded, events happened,\nnetwork requests sent and responses received in HAR_ format.\n\n**Async:** no.\n\nUse :ref:`splash-har` to get information about network requests and\nother Splash activity.\n\nIf your script returns the result of ``splash:har()`` in a top-level\n``\"har\"`` key then Splash UI will give you a nice diagram with network\ninformation (similar to \"Network\" tabs in Firefox or Chrome developer tools):\n\n.. code-block:: lua\n\n     function main(splash)\n         assert(splash:go(splash.args.url))\n         return {har=splash:har()}\n     end\n\nBy default, when several requests are made (e.g. :ref:`splash-go` is called\nmultiple times), HAR data is accumulated and combined into a single object\n(logs are still grouped by page).\n\nIf you want only updated information use ``reset`` parameter: it drops\nall existing logs and start recording from scratch:\n\n.. code-block:: lua\n\n     function main(splash, args)\n         assert(splash:go(args.url1))\n         local har1 = splash:har{reset=true}\n         assert(splash:go(args.url2))\n         local har2 = splash:har()\n         return {har1=har1, har2=har2}\n     end\n\nBy default, response content is not returned in HAR data. To enable it, use\n:ref:`splash-response-body-enabled` option or\n:ref:`splash-request-enable-response-body` method.\n\nSee also: :ref:`splash-har-reset`, :ref:`splash-on-response`,\n:ref:`splash-response-body-enabled`, :ref:`splash-request-enable-response-body`.\n\n.. _HAR: http://www.softwareishard.com/blog/har-12-spec/",
+    "content": "**Signature:** ``har = splash:har{reset=false}``\n\n**Parameters:**\n\n* reset - optional; when ``true``, reset HAR records after taking a snapshot.\n\n**Returns:** information about pages loaded, events happened,\nnetwork requests sent and responses received in HAR_ format.\n\n**Async:** no.\n\nUse :ref:`splash-har` to get information about network requests and\nother Splash activity.\n\nIf your script returns the result of ``splash:har()`` in a top-level\n``\"har\"`` key then Splash UI will give you a nice diagram with network\ninformation (similar to \"Network\" tabs in Firefox or Chrome developer tools):\n\n.. code-block:: lua\n\n     function main(splash)\n         assert(splash:go(splash.args.url))\n         return {har=splash:har()}\n     end\n\nBy default, when several requests are made (e.g. :ref:`splash-go` is called\nmultiple times), HAR data is accumulated and combined into a single object\n(logs are still grouped by page).\n\nIf you want only updated information use ``reset`` parameter: it drops\nall existing logs and start recording from scratch:\n\n.. code-block:: lua\n\n     function main(splash, args)\n         assert(splash:go(args.url1))\n         local har1 = splash:har{reset=true}\n         assert(splash:go(args.url2))\n         local har2 = splash:har()\n         return {har1=har1, har2=har2}\n     end\n\nBy default, request and response contents are not included in HAR data. To\nenable request contents, use :ref:`splash-request-body-enabled` option. To\nenable response contents, use :ref:`splash-response-body-enabled` option or\n:ref:`splash-request-enable-response-body` method.\n\nSee also: :ref:`splash-har-reset`, :ref:`splash-on-response`,\n:ref:`splash-request-body-enabled`, :ref:`splash-response-body-enabled`,\n:ref:`splash-request-enable-response-body`.\n\n.. _HAR: http://www.softwareishard.com/blog/har-12-spec/",
     "short": "",
     "signature": "har = splash:har{reset=false}",
     "returns": "information about pages loaded, events happened,\nnetwork requests sent and responses received in HAR_ format.",
     "async": "no.",
-    "details": "Use :ref:`splash-har` to get information about network requests and\nother Splash activity.\n\nIf your script returns the result of ``splash:har()`` in a top-level\n``\"har\"`` key then Splash UI will give you a nice diagram with network\ninformation (similar to \"Network\" tabs in Firefox or Chrome developer tools):\n\n.. code-block:: lua\n\n     function main(splash)\n         assert(splash:go(splash.args.url))\n         return {har=splash:har()}\n     end\n\nBy default, when several requests are made (e.g. :ref:`splash-go` is called\nmultiple times), HAR data is accumulated and combined into a single object\n(logs are still grouped by page).\n\nIf you want only updated information use ``reset`` parameter: it drops\nall existing logs and start recording from scratch:\n\n.. code-block:: lua\n\n     function main(splash, args)\n         assert(splash:go(args.url1))\n         local har1 = splash:har{reset=true}\n         assert(splash:go(args.url2))\n         local har2 = splash:har()\n         return {har1=har1, har2=har2}\n     end\n\nBy default, response content is not returned in HAR data. To enable it, use\n:ref:`splash-response-body-enabled` option or\n:ref:`splash-request-enable-response-body` method.\n\nSee also: :ref:`splash-har-reset`, :ref:`splash-on-response`,\n:ref:`splash-response-body-enabled`, :ref:`splash-request-enable-response-body`.\n\n.. _HAR: http://www.softwareishard.com/blog/har-12-spec/",
+    "details": "Use :ref:`splash-har` to get information about network requests and\nother Splash activity.\n\nIf your script returns the result of ``splash:har()`` in a top-level\n``\"har\"`` key then Splash UI will give you a nice diagram with network\ninformation (similar to \"Network\" tabs in Firefox or Chrome developer tools):\n\n.. code-block:: lua\n\n     function main(splash)\n         assert(splash:go(splash.args.url))\n         return {har=splash:har()}\n     end\n\nBy default, when several requests are made (e.g. :ref:`splash-go` is called\nmultiple times), HAR data is accumulated and combined into a single object\n(logs are still grouped by page).\n\nIf you want only updated information use ``reset`` parameter: it drops\nall existing logs and start recording from scratch:\n\n.. code-block:: lua\n\n     function main(splash, args)\n         assert(splash:go(args.url1))\n         local har1 = splash:har{reset=true}\n         assert(splash:go(args.url2))\n         local har2 = splash:har()\n         return {har1=har1, har2=har2}\n     end\n\nBy default, request and response contents are not included in HAR data. To\nenable request contents, use :ref:`splash-request-body-enabled` option. To\nenable response contents, use :ref:`splash-response-body-enabled` option or\n:ref:`splash-request-enable-response-body` method.\n\nSee also: :ref:`splash-har-reset`, :ref:`splash-on-response`,\n:ref:`splash-request-body-enabled`, :ref:`splash-response-body-enabled`,\n:ref:`splash-request-enable-response-body`.\n\n.. _HAR: http://www.softwareishard.com/blog/har-12-spec/",
     "params": "* reset - optional; when ``true``, reset HAR records after taking a snapshot."
   },
   "splash:har_reset": {
@@ -647,5 +702,27 @@
     "async": "no.",
     "details": "This method differs from :ref:`splash-select` by returning the *all*\nelements in a table that match the specified selector.\n\nIf no elements can be found using the specified selector ``{}`` is\nreturned. If the selector is not a valid CSS selector an error is raised.\n\nExample: select all ``<img />`` elements and get their ``src`` attributes\n\n.. code-block:: lua\n\n    local treat = require('treat')\n\n    function main(splash)\n        assert(splash:go(splash.args.url))\n        assert(splash:wait(0.5))\n\n        local imgs = splash:select_all('img')\n        local srcs = {}\n\n        for _, img in ipairs(imgs) do\n          srcs[#srcs+1] = img.node.attributes.src\n        end\n\n        return treat.as_array(srcs)\n    end",
     "params": "* selector - valid CSS selector"
+  },
+  "splash:on_navigation_locked": {
+    "name": "on_navigation_locked",
+    "header": "splash:on_navigation_locked",
+    "content": "Register a function to be called before a request is discarded when navigation is locked.\n\n**Signature:** ``splash:on_navigation_locked(callback)``\n\n**Parameters:**\n\n* callback - Lua function to call before a request is discarded.\n\n**Returns:** nil.\n\n**Async:** no.\n\n:ref:`splash-on-navigation-locked` callback receives a single ``request`` argument\n(a :ref:`splash-request`).\n\nTo get information about a request use request\n:ref:`attributes <splash-request-attributes>`;\n\nA callback passed to :ref:`splash-on-navigation-locked` can't call Splash\nasync methods like :ref:`splash-wait` or :ref:`splash-go`.\n\nExample 1 - log all URLs discarded using :ref:`splash-request-url` attribute:\n\ntreat = require(\"treat\")\n\nfunction main(splash, args)\n  local urls = {}\n  splash:on_navigation_locked(function(request)\n    table.insert(urls, request.url)\n  end)\n\n  assert(splash:go(splash.args.url))\n  splash:lock_navigation()\n  splash:select(\"a\"):mouse_click()\n  return treat.as_array(urls)\nend",
+    "short": "Register a function to be called before a request is discarded when navigation is locked.",
+    "signature": "splash:on_navigation_locked(callback)",
+    "returns": "nil.",
+    "async": "no.",
+    "details": ":ref:`splash-on-navigation-locked` callback receives a single ``request`` argument\n(a :ref:`splash-request`).\n\nTo get information about a request use request\n:ref:`attributes <splash-request-attributes>`;\n\nA callback passed to :ref:`splash-on-navigation-locked` can't call Splash\nasync methods like :ref:`splash-wait` or :ref:`splash-go`.\n\nExample 1 - log all URLs discarded using :ref:`splash-request-url` attribute:\n\ntreat = require(\"treat\")\n\nfunction main(splash, args)\n  local urls = {}\n  splash:on_navigation_locked(function(request)\n    table.insert(urls, request.url)\n  end)\n\n  assert(splash:go(splash.args.url))\n  splash:lock_navigation()\n  splash:select(\"a\"):mouse_click()\n  return treat.as_array(urls)\nend",
+    "params": "* callback - Lua function to call before a request is discarded."
+  },
+  "splash:on_navigation_locked_reset": {
+    "name": "on_navigation_locked_reset",
+    "header": "splash:on_navigation_locked_reset",
+    "content": "Remove all callbacks registered by :ref:`splash-on-navigation-locked`.\n\n**Signature:** ``splash:on_navigation_locked_reset()``\n\n**Returns:** nil\n\n**Async:** no.",
+    "short": "Remove all callbacks registered by :ref:`splash-on-navigation-locked`.",
+    "signature": "splash:on_navigation_locked_reset()",
+    "returns": "nil",
+    "async": null,
+    "details": "**Async:** no.",
+    "params": null
   }
 }

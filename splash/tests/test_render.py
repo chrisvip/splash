@@ -714,6 +714,28 @@ class RenderJsonTest(Base.RenderTest):
         self.assertTrue(u'проверка' in html)
         self.assertTrue(u'1251' in html)
 
+    def test_html5_enabled_default(self):
+        self.assertEqual(self._video_is_enabled({}),
+                         defaults.HTML5_MEDIA_ENABLED)
+
+    def test_html5_enabled_on_off(self):
+        self.assertFalse(self._video_is_enabled({'html5_media': 0}))
+        self.assertTrue(self._video_is_enabled({'html5_media': 1}))
+
+    def _video_is_enabled(self, query):
+        HTML5_VIDEO_SUPPORTED_JS = """
+        !!document.createElement('video').canPlayType
+        """.strip()
+        _query = {
+            'url': self.mockurl('jsrender'),
+            'script': 1,
+            'js_source': HTML5_VIDEO_SUPPORTED_JS
+        }
+        _query.update(query)
+        r = self.request(_query)
+        self.assertStatusCode(r, 200)
+        return bool(r.json().get('script', False))
+
     def assertFieldsInResponse(self, res, fields):
         for key in fields:
             self.assertTrue(key in res, "%s is not in response" % key)
@@ -795,6 +817,17 @@ class RenderJsonHistoryTest(BaseRenderTest):
         for code in [404, 403, 400, 500, 503]:
             url = self.mockurl('getrequest') + '?code=%d' % code
             self.assertHistoryUrls({'url': url}, [(url, code)], full_urls=True)
+
+    def test_history_request_body(self):
+        history = self.assertHistoryUrls(
+            {'url': self.mockurl('jspost'), 'wait': 0.1, 'request_body': 1},
+            [('jspost', 200), ('postrequest', 200)]
+        )
+        post_data = history[1]['request']['postData']
+        assert 'encoding' not in post_data
+        assert post_data['mimeType'] == "application/x-www-form-urlencoded"
+        assert post_data['text'] == ("hidden-field=i-am-hidden&"
+                                     "a-field=field+value")
 
     def assertHistoryUrls(self, query, urls_and_codes, full_urls=False):
         query['history'] = 1

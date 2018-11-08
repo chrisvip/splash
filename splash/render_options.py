@@ -136,6 +136,9 @@ class RenderOptions(object):
     def get_response_body(self):
         return self._get_bool("response_body", defaults.RESPONSE_BODY_ENABLED)
 
+    def get_request_body(self):
+        return self._get_bool("request_body", defaults.REQUEST_BODY_ENABLED)
+
     def get_images(self):
         return self._get_bool("images", defaults.AUTOLOAD_IMAGES)
 
@@ -347,6 +350,9 @@ class RenderOptions(object):
             content_types = list(filter(None, content_types.split(',')))
         return content_types
 
+    def get_html5_media(self):
+        return self._get_bool("html5_media", defaults.HTML5_MEDIA_ENABLED)
+
     def get_common_params(self, js_profiles_path):
         wait = self.get_wait()
         return {
@@ -363,6 +369,7 @@ class RenderOptions(object):
             'js_source': self.get_js_source(),
             'http_method': self.get_http_method(),
             'body': self.get_body(),
+            'html5_media': self.get_html5_media(),
             # 'lua': self.get_lua(),
         }
 

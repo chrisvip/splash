@@ -35,6 +35,8 @@ Navigation
   to the browser;
 * :ref:`splash-lock-navigation` and :ref:`splash-unlock-navigation` -
   lock/unlock navigation;
+* :ref:`splash-on-navigation-locked` allows to inspect requests
+  discarded after navigation was locked;
 * :ref:`splash-set-user-agent` allows to change User-Agent header used
   for requests;
 * :ref:`splash-set-custom-headers` allows to set default HTTP headers
@@ -150,8 +152,13 @@ Browsing Options
   (it is requird for some websites because Webkit doesn't have localStorage
   available in Private Mode);
 * :ref:`splash-images-enabled` allows to turn OFF downloading of images;
-* :ref:`splash-plugins-enabled` allows to enable plugins (in default DOcker image
-  it enables Flash);
+* :ref:`splash-plugins-enabled` allows to enable plugins (in the default
+  Docker image it enables Flash);
 * :ref:`splash-resource-timeout` allows to drop slow or hanging requests
   to related resources after a timeout
-
+* :ref:`splash-indexeddb-enabled` allows to turn IndexedDB ON
+* :ref:`splash-webgl-enabled` allows to turn WebGL OFF
+* :ref:`splash-html5-media-enabled` allows to turn on HTML5 media
+  (e.g. playback of ``<video>`` tags).
+* :ref:`splash-media-source-enabled` allows to turn off Media Source Extension
+  API support

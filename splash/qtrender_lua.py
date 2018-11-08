@@ -136,13 +136,13 @@ def _command_result_to_pyresult(res):
 def lua_property(name):
     """ Decorator for marking methods that make attributes available to Lua """
     def decorator(meth):
-        def setter(method):
+        def lua_setter(method):
             meth._setter_method = method.__name__
             return method
 
         meth._is_lua_property = True
         meth._name = name
-        meth.lua_setter = setter
+        meth.lua_setter = lua_setter
         return meth
 
     return decorator
@@ -529,6 +529,16 @@ class Splash(BaseExposedObject):
     @command()
     def set_private_mode_enabled(self, value):
         self.tab.set_private_mode_enabled(bool(value))
+
+    @lua_property('request_body_enabled')
+    @command()
+    def get_request_body_enabled(self):
+        return self.tab.get_request_body_enabled()
+
+    @get_request_body_enabled.lua_setter
+    @command()
+    def set_request_body_enabled(self, value):
+        self.tab.set_request_body_enabled(bool(value))
 
     @lua_property('response_body_enabled')
     @command()
@@ -1145,6 +1155,46 @@ class Splash(BaseExposedObject):
     def set_plugins_enabled(self, enabled):
         self.tab.set_plugins_enabled(bool(enabled))
 
+    @lua_property("indexeddb_enabled")
+    @command()
+    def get_indexeddb_enabled(self):
+        return self.tab.get_indexeddb_enabled()
+
+    @get_indexeddb_enabled.lua_setter
+    @command()
+    def set_indexeddb_enabled(self, value):
+        self.tab.set_indexeddb_enabled(bool(value))
+
+    @lua_property('media_source_enabled')
+    @command()
+    def get_media_source_enabled(self):
+        return self.tab.get_media_source_enabled()
+
+    @get_media_source_enabled.lua_setter
+    @command()
+    def set_media_source_enabled(self, enabled):
+        self.tab.set_media_source_enabled(bool(enabled))
+
+    @lua_property('html5_media_enabled')
+    @command()
+    def get_html5_media_enabled(self):
+        return self.tab.get_html5_media_enabled()
+
+    @get_html5_media_enabled.lua_setter
+    @command()
+    def set_html5_media_enabled(self, enabled):
+        self.tab.set_html5_media_enabled(bool(enabled))
+
+    @lua_property('webgl_enabled')
+    @command()
+    def get_webgl_enabled(self):
+        return self.tab.get_webgl_enabled()
+
+    @get_webgl_enabled.lua_setter
+    @command()
+    def set_webgl_enabled(self, enabled):
+        self.tab.set_webgl_enabled(bool(enabled))
+
     @lua_property('resource_timeout')
     @command()
     def get_resource_timeout(self):
@@ -1181,16 +1231,31 @@ class Splash(BaseExposedObject):
                 'walltime': time.time()}
 
     @command(sets_callback=True, decode_arguments=False)
+    def _on_navigation_locked(self, callback):
+        """
+        Register a Lua callback to be called when navigation happens but it is locked.
+        """
+        def _callback(request):
+            if self.destroyed:
+                return
+            exceptions = StoredExceptions()  # FIXME: exceptions are discarded
+            req = _ExposedBoundRequest(self.lua, exceptions, request, None, None)
+            with req.allowed():
+                callback(req)
+        self.tab.register_callback("on_navigation_locked", _callback)
+        return True
+
+    @command(sets_callback=True, decode_arguments=False)
     def _on_request(self, callback):
         """
         Register a Lua callback to be called when a resource is requested.
         """
-        def _callback(request, operation, outgoing_data):
+        def _callback(request, operation, content):
             if self.destroyed:
                 return
             exceptions = StoredExceptions()  # FIXME: exceptions are discarded
             req = _ExposedBoundRequest(self.lua, exceptions, request, operation,
-                                       outgoing_data)
+                                       content)
             with req.allowed():
                 callback(req)
 
@@ -1305,6 +1370,10 @@ class Splash(BaseExposedObject):
     @command()
     def on_response_headers_reset(self):
         self.tab.clear_callbacks("on_response_headers")
+
+    @command()
+    def on_navigation_locked_reset(self):
+        self.tab.clear_callbacks("on_navigation_locked")
 
     @command()
     def get_version(self):
@@ -1973,8 +2042,8 @@ class _ExposedRequest(BaseExposedObject):
 
     def __init__(self, lua, exceptions, url, method, headers, info):
         super(_ExposedRequest, self).__init__(lua, exceptions)
-        self.url = url
-        self.method = method
+        self.url = self.lua.python2lua(url)
+        self.method = self.lua.python2lua(method)
         # TODO: make info and headers attributes lazy
         self.headers = self.lua.python2lua(headers, encoding='latin1')
         self.info = self.lua.python2lua(info)
@@ -1999,11 +2068,11 @@ class _ExposedBoundRequest(BaseExposedObject):
     """ QNetworkRequest wrapper for Lua """
     _attribute_whitelist = ['url', 'method', 'headers', 'info']
 
-    def __init__(self, lua, exceptions, request, operation, outgoing_data):
+    def __init__(self, lua, exceptions, request, operation, content):
         super(_ExposedBoundRequest, self).__init__(lua, exceptions)
         self.request = request
 
-        har_request = request2har(request, operation, outgoing_data)
+        har_request = request2har(request, operation, content)
         self.url = self.lua.python2lua(har_request['url'])
         self.method = self.lua.python2lua(har_request['method'])
         # TODO: make info and headers attributes lazy

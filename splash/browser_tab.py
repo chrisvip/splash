@@ -3,6 +3,7 @@ import base64
 import functools
 import os
 import weakref
+import traceback
 
 from PyQt5.QtCore import (QObject, QSize, Qt, QTimer, pyqtSlot, QEvent,
                           QPointF, QPoint, pyqtSignal)
@@ -21,6 +22,7 @@ from splash.qtrender_image import QtImageRenderer
 from splash.qtutils import (
     OPERATION_QT_CONSTANTS,
     MediaSourceEnabled,
+    MediaEnabled,
     WrappedSignal,
     qt2py,
     qurl2ascii,
@@ -31,7 +33,7 @@ from splash.qtutils import (
 from splash.render_options import validate_size_str
 from splash.qwebpage import SplashQWebPage, SplashQWebView
 from splash.exceptions import JsError, OneShotCallbackError, ScriptError
-from splash.utils import to_bytes, get_id, traverse_data
+from splash.utils import to_bytes, get_id
 from splash.jsutils import (
     get_sanitized_result_js,
     SANITIZE_FUNC_JS,
@@ -184,18 +186,22 @@ class BrowserTab(QObject):
     get_plugins_enabled = webpage_option_getter(QWebSettings.PluginsEnabled)
     set_plugins_enabled = webpage_option_setter(QWebSettings.PluginsEnabled, bool)
 
+    get_indexeddb_enabled = webpage_option_getter(QWebSettings.OfflineStorageDatabaseEnabled)
+    set_indexeddb_enabled = webpage_option_setter(QWebSettings.OfflineStorageDatabaseEnabled)
+
+    get_media_source_enabled = webpage_option_getter(MediaSourceEnabled)
+    set_media_source_enabled = webpage_option_setter(MediaSourceEnabled)
+
+    get_html5_media_enabled = webpage_option_getter(MediaEnabled)
+    set_html5_media_enabled = webpage_option_setter(MediaEnabled)
+
+    get_webgl_enabled = webpage_option_getter(QWebSettings.WebGLEnabled)
+    set_webgl_enabled = webpage_option_setter(QWebSettings.WebGLEnabled)
 
     def _set_default_webpage_options(self, web_page):
-        """
-        Set QWebPage options.
-        TODO: allow to customize them.
-        """
+        """ Set QWebPage options. TODO: allow to customize defaults. """
         settings = web_page.settings()
-        settings.setAttribute(QWebSettings.JavascriptEnabled, True)
         settings.setAttribute(QWebSettings.LocalContentCanAccessRemoteUrls, True)
-
-        # enable Media Source by default, at least to make html5test.com work
-        settings.setAttribute(MediaSourceEnabled, True)
 
         scroll_bars = Qt.ScrollBarAsNeeded if self.visible else Qt.ScrollBarAlwaysOff
         web_page.mainFrame().setScrollBarPolicy(Qt.Vertical, scroll_bars)
@@ -204,8 +210,14 @@ class BrowserTab(QObject):
         if self.visible:
             settings.setAttribute(QWebSettings.DeveloperExtrasEnabled, True)
 
+        self.set_js_enabled(True)
         self.set_plugins_enabled(defaults.PLUGINS_ENABLED)
+        self.set_request_body_enabled(defaults.REQUEST_BODY_ENABLED)
         self.set_response_body_enabled(defaults.RESPONSE_BODY_ENABLED)
+        self.set_indexeddb_enabled(defaults.INDEXEDDB_ENABLED)
+        self.set_webgl_enabled(defaults.WEBGL_ENABLED)
+        self.set_html5_media_enabled(defaults.HTML5_MEDIA_ENABLED)
+        self.set_media_source_enabled(defaults.MEDIA_SOURCE_ENABLED)
 
     def _setup_webpage_events(self):
         main_frame = self.web_page.mainFrame()
@@ -242,6 +254,12 @@ class BrowserTab(QObject):
         in case of conflicts.
         """
         self.web_page.custom_headers = headers
+
+    def get_request_body_enabled(self):
+        return self.web_page.request_body_enabled
+
+    def set_request_body_enabled(self, val):
+        self.web_page.request_body_enabled = val
 
     def get_response_body_enabled(self):
         return self.web_page.response_body_enabled
@@ -660,13 +678,18 @@ class BrowserTab(QObject):
     def _on_javascript_window_object_cleared(self):
         self._js_storage_initiated = False
 
-        for script in self._autoload_scripts:
+        for idx, script in enumerate(self._autoload_scripts):
             # XXX: handle_errors=False is used to execute autoload scripts
             # in a global context (not inside a closure).
             # One difference is how are `function foo(){}` statements handled:
             # if executed globally, `foo` becomes an attribute of window;
             # if executed in a closure, `foo` is a name local to this closure.
-            self.runjs(script, handle_errors=False)
+            try:
+                self.runjs(script, handle_errors=False)
+            except Exception as e:
+                msg = "Error in autoload script #{}:".format(idx, e)
+                self.logger.log(msg, min_level=1)
+                self.logger.log(traceback.format_exc(), min_level=1)
 
     def http_get(self, url, callback, headers=None, follow_redirects=True):
         """
@@ -757,7 +780,7 @@ class BrowserTab(QObject):
         # a result - it could be costly. So the original JS code
         # is adjusted to make sure it doesn't return anything.
         self.evaljs(
-            js_source="%s;undefined" % js_source,
+            js_source="%s\n;undefined" % js_source,
             handle_errors=handle_errors,
             result_protection=False,
             dom_elements=False,
